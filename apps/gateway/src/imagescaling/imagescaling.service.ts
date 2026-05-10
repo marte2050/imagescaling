@@ -1,0 +1,39 @@
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
+import { uploadDTO } from './dto/uploadDTO';
+import { ClientKafka } from '@nestjs/microservices';
+import { S3_CLIENT } from './s3.module';
+
+@Injectable()
+export class ImagescalingService {
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(S3_CLIENT) private readonly s3: S3Client,
+    @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
+  ) {}
+
+  async uploadImage(file: Express.Multer.File, information: uploadDTO) {
+    const fileName = `${Date.now()}-${file.originalname}`;
+    const bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') ?? 'imagescaling';
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT') ?? 'http://localhost:9000';
+
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: fileName,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      }),
+    );
+
+    const imageUrl = `${endpoint}/${bucketName}/${fileName}`;
+    const metadata = {
+      url: imageUrl,
+      ...information,
+    };
+
+    this.kafkaClient.emit('image_uploaded', { metadata });
+    return { message: 'Image uploaded successfully' };
+  }
+}
