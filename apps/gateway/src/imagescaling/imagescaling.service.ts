@@ -8,11 +8,17 @@ import { KAFKA_SERVICE } from 'src/kafka/kafka.module';
 
 @Injectable()
 export class ImagescalingService {
+  private readonly bucketName: string;
+  private readonly endpoint: string;
+
   constructor(
     private readonly configService: ConfigService,
     @Inject(S3_CLIENT) private readonly s3: S3Client,
     @Inject(KAFKA_SERVICE) private readonly kafkaClient: ClientKafka,
-  ) {}
+  ) {
+    this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') ?? 'imagescaling';
+    this.endpoint = this.configService.get<string>('MINIO_ENDPOINT') ?? 'http://localhost:9000';
+  }
 
   async uploadImage(file: Express.Multer.File, information: uploadDTO) {
     if (!file) {
@@ -20,13 +26,11 @@ export class ImagescalingService {
     }
 
     const fileName = `${Date.now()}-${file.originalname}`;
-    const bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') ?? 'imagescaling';
-    const endpoint = this.configService.get<string>('MINIO_ENDPOINT') ?? 'http://localhost:9000';
 
     try {
       await this.s3.send(
         new PutObjectCommand({
-          Bucket: bucketName,
+          Bucket: this.bucketName,
           Key: fileName,
           Body: file.buffer,
           ContentType: file.mimetype,
@@ -36,7 +40,7 @@ export class ImagescalingService {
       throw new HttpException('Ocorreu um erro ao fazer o upload da imagem.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const imageUrl = `${endpoint}/${bucketName}/${fileName}`;
+    const imageUrl = `${this.endpoint}/${this.bucketName}/${fileName}`;
     const metadata = {
       url: imageUrl,
       ...information,
