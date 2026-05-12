@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ImagescalingModule } from './imagescaling/imagescaling.module';
 
 @Module({
-  imports: [],
+  imports: [ImagescalingModule],
   controllers: [AppController],
   providers: [AppService],
 })
