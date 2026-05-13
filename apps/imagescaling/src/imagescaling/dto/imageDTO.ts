@@ -1,7 +1,21 @@
-export type imageDTO = {
-  metadata: {
-    url: string;
-    width: number;
-    height: number;
-  };
-};
+import { Type } from 'class-transformer';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
+
+class ImageMetadataDTO {
+  @IsString()
+  url!: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  width!: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  height!: number;
+}
+
+export class imageDTO {
+  @ValidateNested()
+  @Type(() => ImageMetadataDTO)
+  metadata!: ImageMetadataDTO;
+}

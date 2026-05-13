@@ -9,7 +9,6 @@ import { KAFKA_SERVICE } from 'src/kafka/kafka.module';
 @Injectable()
 export class ImagescalingService {
   private readonly bucketName: string;
-  private readonly endpoint: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -17,7 +16,6 @@ export class ImagescalingService {
     @Inject(KAFKA_SERVICE) private readonly kafkaClient: ClientKafka,
   ) {
     this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') ?? 'imagescaling';
-    this.endpoint = this.configService.get<string>('MINIO_ENDPOINT') ?? 'http://localhost:9000';
   }
 
   async uploadImage(file: Express.Multer.File, information: uploadDTO) {
@@ -40,9 +38,9 @@ export class ImagescalingService {
       throw new HttpException('Ocorreu um erro ao fazer o upload da imagem.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    const imageUrl = `${this.endpoint}/${this.bucketName}/${fileName}`;
+    const key = `${fileName}`;
     const metadata = {
-      url: imageUrl,
+      url: key,
       ...information,
     };
 

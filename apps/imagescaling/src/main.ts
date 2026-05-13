@@ -1,24 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { KafkaOptions } from '@nestjs/microservices';
+import { kafkaMicroserviceOptions } from './kafka/kafka.module';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+  const app = await NestFactory.createMicroservice<KafkaOptions>(
     AppModule,
-    {
-      transport: Transport.KAFKA,
-      options: {
-        client: {
-          brokers: ['localhost:9092'],
-        },
-        consumer: {
-          groupId: 'image-scaling-consumer',
-        },
-      },
-    },
+    kafkaMicroserviceOptions,
   );
-
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   await app.listen();
 }
 

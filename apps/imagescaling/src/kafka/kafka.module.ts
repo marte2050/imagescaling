@@ -1,7 +1,19 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ClientsModule, KafkaOptions, Transport } from '@nestjs/microservices';
 
 const KAFKA_SERVICE = 'KAFKA_SERVICE';
+
+export const kafkaMicroserviceOptions: KafkaOptions = {
+  transport: Transport.KAFKA,
+  options: {
+    client: {
+      brokers: ['localhost:9092'],
+    },
+    consumer: {
+      groupId: 'image-scaling-consumer',
+    },
+  },
+};
 
 @Module({
   imports: [
