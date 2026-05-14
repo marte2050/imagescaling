@@ -12,7 +12,7 @@ import { MailService } from './mail.service';
       transport: {
         host: process.env.MAIL_HOST || 'localhost',
         port: process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT) : 1025,
-        secure: false,
+        secure: process.env.MAIL_SECURE === 'true' || false,
         auth: {
           user: process.env.MAIL_USER || 'test',
           pass: process.env.MAIL_PASS || 'test',
