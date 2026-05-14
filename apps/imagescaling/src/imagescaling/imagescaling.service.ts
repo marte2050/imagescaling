@@ -25,9 +25,8 @@ export class ImagescalingService {
     this.kafkaService.publishToKafka(
       {
         email: body.metadata.email,
-        key: body.metadata.key,
+        key: key,
       },
-      key,
       'notification',
     );
 
