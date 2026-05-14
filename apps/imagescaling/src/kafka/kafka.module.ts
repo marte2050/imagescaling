@@ -7,10 +7,10 @@ export const kafkaMicroserviceOptions: KafkaOptions = {
   transport: Transport.KAFKA,
   options: {
     client: {
-      brokers: ['localhost:9092'],
+      brokers: process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'],
     },
     consumer: {
-      groupId: 'group-consumer-images',
+      groupId: process.env.GROUPKAFKA || 'group-consumer-images',
     },
   },
 };
@@ -23,7 +23,7 @@ export const kafkaMicroserviceOptions: KafkaOptions = {
         transport: Transport.KAFKA,
         options: {
           client: {
-            brokers: ['localhost:9092'],
+            brokers: process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'],
           },
         },
       },
