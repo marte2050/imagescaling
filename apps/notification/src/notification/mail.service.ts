@@ -10,7 +10,7 @@ export class MailService {
     await this.mailerService.sendMail({
       to: body.to,
       subject: body.subject,
-      html: `<p>${body.html}</p>`,
+      html: `${body.html}`,
       attachments: [
         {
           filename: 'Imagem Processada.jpeg',
