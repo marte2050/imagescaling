@@ -1,33 +1,27 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Inject, Injectable } from '@nestjs/common';
-import { S3_CLIENT } from 'src/s3/s3.module';
+import { Injectable } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { imageDTO } from './dto/notificationDTO';
+import { S3Service } from 'src/s3/s3.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class NotificationService {
+  private readonly bucketName: string;
+
   constructor(
-    @Inject(S3_CLIENT) private readonly s3: S3Client,
+    private readonly configService: ConfigService,
     private readonly mailService: MailService,
-  ) {}
-
-  async getImage(imageURL: string) {
-    const command = new GetObjectCommand({
-      Bucket: 'imagescaling',
-      Key: imageURL,
-    });
-
-    const response = await this.s3.send(command);
-    const buffer = await response.Body?.transformToByteArray();
-    return buffer;
+    private readonly s3: S3Service,
+  ) {
+    this.bucketName = this.configService.get<string>('BUCKET_NAME') ?? 'imagescaling';
   }
 
   async notification(body: imageDTO) {
-    const bufferImage = await this.getImage(body.metadata.url);
+    const bufferImage = await this.s3.getObject(this.bucketName, body.metadata.url);
     await this.mailService.sendEmail({
       subject: 'Image Processed',
       to: 'recipient@example.com',
-      html: `<p>Your image has been processed. ${body.metadata.url}</p>`,
+      html: `<p>Your image has been processed.</p>`,
       buffer: bufferImage,
     });
     return { message: 'Notification sent successfully' };
