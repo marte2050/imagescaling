@@ -5,6 +5,9 @@ class ImageMetadataDTO {
   @IsString()
   key!: string;
 
+  @IsString()
+  email!: string;
+
   @Type(() => Number)
   @IsNumber()
   width!: number;

@@ -1,54 +1,35 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { imageDTO } from './dto/imageDTO';
-import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import { S3_CLIENT } from 'src/s3/s3.module';
 import sharp from 'sharp';
-import { KAFKA_SERVICE } from 'src/kafka/kafka.module';
-import { ClientKafka } from '@nestjs/microservices';
+import { S3Service } from 'src/s3/s3.service';
+import { KafkaService } from 'src/kafka/kafka.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ImagescalingService {
+  private readonly bucketName: string;
+
   constructor(
-    @Inject(S3_CLIENT) private readonly s3: S3Client,
-    @Inject(KAFKA_SERVICE) private readonly kafkaService: ClientKafka,
-  ) {}
+    private readonly configService: ConfigService,
+    private readonly s3Service: S3Service,
+    private readonly kafkaService: KafkaService,
+  ) {
+    this.bucketName = this.configService.get<string>('BUCKET_NAME') ?? 'imagescaling';
+  }
+
   async imageScaling(body: imageDTO) {
-    const command = new GetObjectCommand({
-      Bucket: 'imagescaling',
-      Key: body.metadata.key,
-    });
-
+    const buffer = await this.s3Service.getObject(this.bucketName, body.metadata.key);
+    const resizedBuffer = await sharp(buffer).resize(body.metadata.width, body.metadata.height).jpeg({ quality: 80 }).toBuffer();
     const key = `${Date.now()}-scaled.jpeg`;
-    const response = await this.s3.send(command);
-    const buffer = await response.Body?.transformToByteArray();
-
-    const resizedBuffer = await sharp(buffer)
-      .resize(body.metadata.width, body.metadata.height)
-      .jpeg({ quality: 80 })
-      .toBuffer();
-
-    try {
-      await this.s3.send(
-        new PutObjectCommand({
-          Bucket: 'imagescaling',
-          Key: key,
-          Body: resizedBuffer,
-          ContentType: 'image/jpeg',
-        }),
-      );
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    }
-
-    const metadata = {
-      url: key,
-    };
-
-    this.kafkaService.emit('notification', { metadata });
+    await this.s3Service.uploadS3(resizedBuffer, key, this.bucketName);
+    this.kafkaService.publishToKafka(
+      {
+        email: body.metadata.email,
+        key: body.metadata.key,
+      },
+      key,
+      'notification',
+    );
 
     return {
       message: 'Image scaled and uploaded successfully',

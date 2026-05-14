@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { S3_CLIENT } from './s3.module';
 
@@ -6,7 +6,7 @@ import { S3_CLIENT } from './s3.module';
 export class S3Service {
   constructor(@Inject(S3_CLIENT) private readonly s3: S3Client) {}
 
-  async uploadS3(file: Express.Multer.File, key: string, bucketName: string) {
+  async uploadS3(file: Buffer<ArrayBufferLike>, key: string, bucketName: string) {
     if (!file) {
       throw new HttpException('No file provided', HttpStatus.BAD_REQUEST);
     }
@@ -16,12 +16,23 @@ export class S3Service {
         new PutObjectCommand({
           Bucket: bucketName,
           Key: key,
-          Body: file.buffer,
-          ContentType: file.mimetype,
+          Body: file,
+          ContentType: 'image/jpeg',
         }),
       );
     } catch {
       throw new HttpException('Ocorreu um erro ao fazer o upload da imagem.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  async getObject(bucketName: string, key: string) {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    const response = await this.s3.send(command);
+    const buffer = await response.Body?.transformToByteArray();
+    return buffer;
   }
 }
