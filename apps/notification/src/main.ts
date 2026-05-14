@@ -1,8 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { kafkaMicroserviceOptions } from './kafka/kafka.module';
-import { Logger } from '@nestjs/common';
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -11,7 +10,5 @@ async function bootstrap() {
   );
   await app.listen();
 }
-
-Logger.log('Notification Service is running...');
 
 void bootstrap();
