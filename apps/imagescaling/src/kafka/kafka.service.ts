@@ -5,9 +5,7 @@ import { notificationDTO } from 'src/imagescaling/dto/imageDTO';
 
 @Injectable()
 export class KafkaService {
-  constructor(
-    @Inject(KAFKA_SERVICE) private readonly kafkaClient: ClientKafka,
-  ) {}
+  constructor(@Inject(KAFKA_SERVICE) private readonly kafkaClient: ClientKafka) {}
 
   publishToKafka(information: notificationDTO, key: string, topic: string) {
     this.kafkaClient.emit(topic, {
